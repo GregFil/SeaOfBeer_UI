@@ -1,0 +1,33 @@
+{
+  "name": "seaofbeer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server/index.js",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@quasar/extras": "^2.0.1",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.2",
+    "quasar": "^2.20.0",
+    "vue": "^3.5.38"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@quasar/vite-plugin": "^1.12.0",
+    "@types/node": "^24.13.2",
+    "eslint": "^10.3.0",
+    "globals": "^17.6.0",
+    "sass-embedded": "^1.100.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.59.2",
+    "vite": "^8.0.12"
+  }
+}

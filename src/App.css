@@ -1,0 +1,523 @@
+@import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@400;600;700&display=swap');
+
+:root {
+  --bg: #f7fafc;
+  --panel: #ffffff;
+  --muted: #6b7280;
+  --accent: #2563eb;
+}
+
+* { box-sizing: border-box; }
+body {
+  font-family: 'Pirata One', cursive;
+  margin: 0;
+  background: var(--bg);
+  color: #0f172a;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.app-root {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: 
+    linear-gradient(rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.3)),
+    url('/childmap.png') center/cover no-repeat fixed;
+}
+
+.app-root.no-home-bg {
+  background: var(--bg);
+}
+
+/* Use readable font for buttons and inputs */
+button, 
+input, 
+select, 
+textarea,
+.q-btn,
+.q-select,
+.q-field {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+}
+
+/* watermark will be applied to cards (.panel) instead of the whole page */
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.25)),
+    url('/banner.png') center/cover no-repeat;
+  border-bottom: 1px solid #e6eef8;
+}
+.brand { padding: 0.75rem 1rem; }
+.beer {
+  background: linear-gradient(
+    to bottom,
+    #f7d774 0%,
+    #e0a72f 60%,
+    #c47a1f 100%
+  );
+}
+.brand { display:flex; align-items:center; gap:0.75rem; padding: 0.75rem 1rem; }
+.brand-avatar { width:100px; height:50px; min-width:100px; min-height:50px; border-radius:9999px; object-fit:cover; display:block }
+.brand-title { font-weight: 700; font-size: 2.2rem; }
+.menu-toggle { color:#151C62; display: none !important; }
+
+.menu-backdrop {
+  display: none !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+}
+
+.menu-backdrop.open {
+  display: block !important;
+}
+
+.tabs { margin-bottom: 8px }
+.tab-button { padding: 8px 10px; border-radius:6px;color:white; background-color: #1F3A5F; border:1px solid #e6edf3; cursor:pointer }
+.tab-button.active { background: var(--accent); color: white; border-color: var(--accent) }
+
+@media (max-width: 768px) {
+  .tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .tab-button {
+    flex: 1;
+    min-width: 100px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .drink-title {
+    font-size: 2rem;
+    line-height: 1.15;
+  }
+
+  .tab-button {
+    flex: 1;
+    min-width: 80px;
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  .time-adjust-btn {
+    font-size: 12px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .time-adjust-btn {
+    font-size: 14px !important;
+  }
+}
+
+.app-menu {
+  position: static;
+  right: auto;
+  top: auto;
+  width: auto;
+  height: auto;
+  background: #003B4F;
+  padding: 0;
+  transform: none;
+  transition: none;
+  z-index: auto;
+  overflow-y: visible;
+  display: flex;
+  align-items: center;
+}
+
+.app-menu.open {
+  transform: none;
+}
+
+.app-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  font-size: 1.15em;
+}
+
+.app-menu li {
+  margin: 0;
+}
+.app-menu a { color: white; text-decoration: none; font-weight: 500; padding: 0.75rem 1rem; display: block; transition: background 0.2s; white-space: nowrap; font-size: 1.1em; }
+.app-menu a:hover { background: rgba(255, 255, 255, 0.1); }
+
+.container { padding: 1rem; max-width: 1000px; margin: 0 auto; width: 100%; }
+.home-container { padding-top: 0; }
+.panel { background: rgba(255, 255, 255, 0.95); padding: 1rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(2,6,23,0.04); }
+.lead { color: var(--muted); margin-top: 0; }
+
+@media (max-width: 768px) {
+  .home-shortcuts {
+    display: none !important;
+  }
+}
+
+.people-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.75rem; }
+.person { display: flex; flex-direction: column; padding: 0.6rem; border-radius: 6px; background: #fbfdff; border: 1px solid #eef2ff; }
+.person-name { font-weight: 600; font-size: 1.3em; }
+.person-email { color: var(--muted); text-decoration: none; }
+
+.form-error {
+  color: #b91c1c;
+  background: #fff1f2;
+  border: 1px solid #fecaca;
+  padding: 8px 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+}
+.admin-form{
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+
+}
+
+.admin-form input {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 6px;
+  border: 1px solid #e6edf3;
+  border-radius: 6px;
+}
+
+.admin-form button {
+  padding: 8px 12px;
+  background-color: #1F3A5F;
+  color: white;
+  border: 0;
+  border-radius: 6px;
+}
+
+.notify {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  right: auto;
+  min-width: 220px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(2,6,23,0.08);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  z-index: 9999;
+  transform: translateX(-50%);
+  animation: slideUp 320ms ease;
+}
+.notify-info { background: #0ea5ff; }
+.notify-success { background: #16a34a; }
+.notify-error { background: #ef4444; }
+.notify-close { background: transparent; border: 0; color: rgba(255,255,255,0.9); font-size: 16px; }
+
+.person-delete {
+  background: transparent;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.person-delete:hover { background: #fff1f2 }
+
+.selector-panel {
+  margin-top: 16px;
+}
+.pick-btn {
+ background-color: #1F3A5F;
+  color: white;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.clear-btn {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.selected-list .person.selected { display:flex; justify-content:space-between; align-items:center }
+.selected-order { color: var(--muted); font-weight:600 }
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(18px); opacity: 0 }
+  to { transform: translateX(-50%) translateY(0); opacity: 1 }
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .container { 
+    padding: 0.75rem; 
+    max-width: 100%; 
+    width: 100%;
+    margin: 0;
+  }
+  .home-container {
+    padding-top: 0;
+  }
+  .panel { padding: 0.75rem; }
+  
+  /* Ensure all content fits properly */
+  * { max-width: 100%; }
+  
+  /* Header */
+  .app-header { 
+    flex-wrap: wrap; 
+    padding: 0;
+  }
+  .brand { 
+    padding: 0.5rem 0.75rem; 
+    flex: 1;
+  }
+  .brand-title { font-size: 1.8rem; }
+  .brand-avatar { width: 60px; height: 30px; min-width: 60px; min-height: 30px; }
+  
+  /* Menu - Slide in from left */
+  .menu-toggle { 
+    display: flex !important; 
+    justify-content: center;
+    align-items: center;
+    width: 44px;
+    height: 44px;
+    color: #003B4F;
+    font-size: 1.2em;
+  }
+  
+  .app-menu {
+    position: fixed;
+    left: 0;
+    top: 60px;
+    width: 280px;
+    height: calc(100vh - 60px);
+    background: #003B4F;
+    padding: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+    overflow-y: auto;
+    flex-direction: column;
+    display: flex;
+  }
+  
+  .app-menu.open {
+    transform: translateX(0);
+  }
+  
+  .app-menu ul {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .app-menu a {
+    display: block;
+    padding: 1rem;
+    color: white;
+    font-size: 1.1em;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .app-menu a:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  /* Main content */
+  body { font-size: 14px; }
+  h1 { font-size: 1.4em !important; }
+  h2 { font-size: 1.3em !important; }
+  h3 { font-size: 1.2em; }
+  h4 { font-size: 1.1em; }
+  h5 { font-size: 1em; }
+  .main-heading { font-size: 1.3em !important; }
+  
+  /* Forms */
+  .admin-form { padding: 0.75rem; }
+  .admin-form input { padding: 10px; font-size: 16px; width: 100%; }
+  .admin-form button { padding: 10px 14px; font-size: 14px; }
+  
+  /* Buttons */
+  .q-btn { min-height: 44px; font-size: 14px !important; }
+  button { min-height: 44px; }
+  
+  /* Quasar inputs */
+  .q-select { width: 100%; }
+  .q-field { width: 100%; }
+  
+  /* People/Crew Status */
+  .person { padding: 0.75rem; }
+  .people-list { gap: 0.5rem; }
+  
+  /* Crew status - reduce font size on mobile */
+  .crew-status-name { 
+    font-size: 1.5em !important;
+    font-weight: bold !important;
+  }
+  
+  /* Voting interface */
+  li { word-break: break-word; }
+  
+  /* Selected place */
+  .selected-place-name {
+    font-size: 1.5em !important;
+  }
+  
+  /* Notifications */
+  .notify { min-width: 90%; left: 5%; right: auto; bottom: 8px; }
+}
+
+@media (max-width: 480px) {
+  .container { 
+    padding: 0.5rem; 
+    max-width: 100%;
+    width: 100%;
+    margin: 0;
+  }
+  .panel { padding: 0.5rem; }
+  
+  /* Ensure all content fits properly */
+  * { max-width: 100%; }
+  
+  /* Header */
+  .app-header { padding: 0; }
+  .brand { 
+    padding: 0.4rem 0.5rem; 
+    min-width: auto;
+    flex: 1;
+  }
+  .brand-title { font-size: 1.6rem; }
+  .brand-avatar { width: 50px; height: 25px; min-width: 50px; min-height: 25px; }
+  
+  /* Menu - Slide in from left */
+  .menu-toggle { 
+    display: flex !important; 
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    color: #003B4F;
+  }
+  
+  .app-menu {
+    position: fixed;
+    left: 0;
+    top: 50px;
+    width: 250px;
+    height: calc(100vh - 50px);
+    background: #003B4F;
+    padding: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 999;
+    overflow-y: auto;
+    flex-direction: column;
+    display: flex;
+  }
+  
+  .app-menu.open {
+    transform: translateX(0);
+  }
+  
+  .app-menu ul {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .app-menu a {
+    display: block;
+    padding: 0.8rem 1rem;
+    color: white;
+    font-size: 0.95em;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .app-menu a:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  /* Text */
+  body { font-size: 13px; }
+  h1 { font-size: 1.1em !important; }
+  h2 { font-size: 1.1em !important; }
+  h3 { font-size: 1em; }
+  h4 { font-size: 0.95em; }
+  
+  /* Crew status - even smaller on extra small screens */
+  .crew-status-name { 
+    font-size: 1.2em !important;
+  }
+  
+  .selected-place-name {
+    font-size: 1.2em !important;
+  }
+  
+  /* Forms */
+  .admin-form { padding: 0.5rem; }
+  .admin-form label { font-size: 0.95em; }
+  .admin-form input { width: 100%; }
+  
+  /* Buttons - touch friendly */
+  .q-btn { min-height: 48px; padding: 10px 12px; }
+  button { min-height: 48px; padding: 10px 12px; }
+  
+  /* Quasar inputs */
+  .q-select { width: 100%; }
+  .q-field { width: 100%; }
+  
+  /* Lists */
+  .people-list { gap: 0.4rem; }
+  .person { padding: 0.5rem; }
+  
+  /* Reduce main heading */
+  .main-heading { font-size: 1.1em !important; }
+  
+  /* Notification */
+  .notify { font-size: 13px; min-width: 90%; }
+}
+
+@media (min-width: 700px) {
+  .person { flex-direction: row; justify-content: space-between; align-items: center; }
+  
+  /* Desktop menu */
+  .menu-toggle { display: none !important; }
+  .menu-backdrop { display: none !important; }
+  
+  .app-menu {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
+    transition: none !important;
+    z-index: auto !important;
+    display: flex !important;
+  }
+  
+  .app-menu ul {
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .app-menu a {
+    border-bottom: none;
+    padding: 0.75rem 1rem;
+    font-size: 1.1em;
+  }
+}
+
