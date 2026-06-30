@@ -12,4 +12,18 @@ export default defineConfig({
       sassVariables: 'src/quasar-variables.scss'
     })
   ],
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://seaofbeer.com',
+        changeOrigin: true,
+        secure: true,
+      },
+      '/rsvp': {
+        target: 'https://seaofbeer.com',
+        changeOrigin: true,
+        secure: true,
+      }
+    }
+  }
 })
