@@ -15,12 +15,12 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://api.seaofbeer.com',
+        target: 'https://seaofbeer.com',
         changeOrigin: true,
         secure: true,
       },
       '/rsvp': {
-        target: 'https://api.seaofbeer.com',
+        target: 'https://seaofbeer.com',
         changeOrigin: true,
         secure: true,
       }
