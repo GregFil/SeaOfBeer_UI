@@ -1,0 +1,15 @@
+{
+  "day": 0,
+  "time": "00:00",
+  "minYesPercent": 50,
+  "waitHours": 1,
+  "minYesCount": 4,
+  "lastRun": null
+}
+{
+  "day": 0,
+  "time": "00:00",
+  "minYesPercent": 0,
+  "waitHours": 48,
+  "lastRun": null
+}

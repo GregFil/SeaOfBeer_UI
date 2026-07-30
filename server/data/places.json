@@ -1,0 +1,18 @@
+[
+  {
+    "placeId": 1,
+    "name": "Test Place",
+    "address": "123 Test St",
+    "link": "https://maps.google.com",
+    "id": "place_1781312451497_gmkk",
+    "map": "https://maps.google.com"
+  },
+  {
+    "placeId": 2,
+    "name": "Warwick Farm Brewery",
+    "address": "800 Almshouse Rd, Jamison, PA 18929",
+    "link": "https://maps.app.goo.gl/em6WfETFruNk9yC37",
+    "id": "place_1781312710826_daag",
+    "map": "https://maps.app.goo.gl/em6WfETFruNk9yC37"
+  }
+]
