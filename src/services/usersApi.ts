@@ -13,7 +13,7 @@ export type UserUpsertPayload = {
   email: string
 }
 
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'http://api.seaofbeer.com'
 const USERS_API_BASE = `${API_BASE}/api/admin/Users`
 
 async function parseError(response: Response): Promise<string> {

@@ -18,7 +18,7 @@
  *   await apiService.delete('/places/1')
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://localhost:7079/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://api.seaofbeer.com'
 
 interface RequestOptions extends RequestInit {
   timeout?: number

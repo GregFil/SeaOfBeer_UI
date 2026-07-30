@@ -56,7 +56,7 @@ const address = ref('')
 const map = ref('')
 const showForm = ref(false)
 const editingId = ref<string | null>(null)
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'http://api.seaofbeer.com'
 const PLACES_API_BASE = `${API_BASE}/api/admin/Places`
 
 function mapApiToPlace(apiPlace: ApiPlace): Place {

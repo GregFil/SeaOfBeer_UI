@@ -102,6 +102,19 @@
       </main>
     </template>
 
+    <template v-else>
+      <main class="container home-container" style="padding-top: 18px;">
+        <section class="panel" style="text-align:center; max-width:820px; margin:0 auto; margin-bottom:12px; background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/banner.png'); background-position:center; background-repeat:no-repeat; background-size:calc(100% - 4px) calc(100% - 4px);">
+          <h2 class="main-heading" style="font-family:'Pirata One', cursive; font-size:2.1em; margin:8px 0 10px; color:#003B4F; letter-spacing:0.02em;">
+            Arrr... no meeting ID in these waters.
+          </h2>
+          <p style="margin:0 auto 14px; max-width:620px; color:#3f4a54; line-height:1.45; font-size:1.05em;">
+            Ye have nothing to do here, matey. Bring a proper meeting link to board the Quarterdeck.
+          </p>
+        </section>
+      </main>
+    </template>
+
     <Notification v-if="currentPage !== 'empty'" :message="notify.message" :type="notify.type" :visible="notify.visible" @close="hideNotification" />
   </div>
 </template>
@@ -130,7 +143,7 @@ type VoteChoice = 'yes' | 'no' | 'not-sure'
 // Constants
 const NOTIFICATION_TIMEOUT = 4000
 const RESPONSES_STORAGE_KEY = 'responses_v1'
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'http://api.seaofbeer.com'
 const VOTE_VALUE_BY_CHOICE: Record<VoteChoice, number> = {
   yes: 1,
   no: 0,
