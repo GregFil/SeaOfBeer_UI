@@ -143,7 +143,7 @@ type VoteChoice = 'yes' | 'no' | 'not-sure'
 // Constants
 const NOTIFICATION_TIMEOUT = 4000
 const RESPONSES_STORAGE_KEY = 'responses_v1'
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'http://api.seaofbeer.com'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://api.seaofbeer.com'
 const VOTE_VALUE_BY_CHOICE: Record<VoteChoice, number> = {
   yes: 1,
   no: 0,

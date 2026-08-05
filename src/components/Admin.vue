@@ -20,7 +20,7 @@ type Person = { name: string; email: string }
 const props = defineProps<{ onAddPerson: (p:Person)=>void; existing?: Person[]; showNotification: (m:string,t?:'error'|'success'|'info')=>void; onDeletePerson: (email:string)=>void; selectedEmails?: string[]; selectedPlaces?: any[] }>()
 
 const tab = ref<'people'|'places'>('people')
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'http://api.seaofbeer.com'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://api.seaofbeer.com'
 
 const selectedEmails = computed(() => props.selectedEmails || [])
 
