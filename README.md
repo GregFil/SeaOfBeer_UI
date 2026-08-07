@@ -7,6 +7,31 @@ Currently, two official plugins are available:
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
 - [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
+## Deploying to IIS via GitHub Actions
+
+The repository includes a ready-to-run workflow at `.github/workflows/deploy.yml` that:
+
+1. Builds the Vue/Vite app (`npm run build`)
+2. Installs Web Deploy on the runner
+3. Deploys the `dist/` folder to your IIS hosting server via MSDeploy
+
+### Required GitHub Secrets
+
+Add the following secrets to your repository (**Settings → Secrets and variables → Actions → New repository secret**):
+
+| Secret name | Value |
+|---|---|
+| `MSDEPLOY_SERVICE_URL` | `https://win1141.site4now.net:8172/MsDeploy.axd?site=filimosg-001-site1` |
+| `MSDEPLOY_SITE_NAME` | `filimosg-001-site1` |
+| `MSDEPLOY_USERNAME` | `filimosg-001` |
+| `MSDEPLOY_PASSWORD` | Your hosting control panel password |
+
+### Triggering the workflow
+
+- **Automatic**: every push to `main` triggers a deploy.
+- **Manual**: go to **Actions → Deploy to IIS via MSDeploy → Run workflow**.
+
+
 ## React Compiler
 
 The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
