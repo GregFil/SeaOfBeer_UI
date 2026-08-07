@@ -838,6 +838,35 @@ function applyEventToHomeState(event: EventApiItem) {
   saveResponses()
   votingActive.value = event.status ?? true
   groupEmailLink.value = event.votingUrl || ''
+
+  const placePayload = event.place as Record<string, unknown> | null
+  const placeIdValue = placePayload?.placeId ?? placePayload?.id
+  const placeName = typeof placePayload?.name === 'string' ? placePayload.name : ''
+  const placeAddress = typeof placePayload?.address === 'string' ? placePayload.address : ''
+  const placeMap = typeof placePayload?.link === 'string' ? placePayload.link : typeof placePayload?.map === 'string' ? placePayload.map : ''
+
+  if (currentEventId.value && placeName) {
+    const restoredSelection = {
+      eventId: String(event.eventId ?? currentEventId.value ?? ''),
+      place: {
+        id: String(placeIdValue ?? ''),
+        name: placeName,
+        address: placeAddress,
+        map: placeMap,
+      },
+      time: normalizeToHHMM(event.eventTime),
+      winner: winner.value,
+      timestamp: new Date().toISOString(),
+    }
+    selectedPlaceInfo.value = restoredSelection
+    try {
+      localStorage.setItem('selected_place_v1', JSON.stringify(restoredSelection))
+    } catch (e) {
+      console.warn('Failed to persist restored selection:', e)
+    }
+  } else {
+    loadSelectedPlace()
+  }
 }
 
 const loadPlaces = async () => {
@@ -864,7 +893,10 @@ const loadSelectedPlace = () => {
     const stored = localStorage.getItem('selected_place_v1')
     if (stored) {
       const parsed = JSON.parse(stored)
-      if (currentEventId.value && parsed?.eventId !== currentEventId.value) {
+      const storedEventId = String(parsed?.eventId ?? '')
+      const currentEventIdValue = String(currentEventId.value || '')
+
+      if (currentEventIdValue && storedEventId && storedEventId !== currentEventIdValue) {
         selectedPlaceInfo.value = null
       } else {
         selectedPlaceInfo.value = parsed
@@ -1019,6 +1051,10 @@ onMounted(async () => {
 
 // Reload selected place when winner is set (to sync with WinnerBanner changes)
 watch(winner, () => {
+  loadSelectedPlace()
+})
+
+watch(currentEventId, () => {
   loadSelectedPlace()
 })
 

@@ -160,7 +160,10 @@ export default defineComponent({
         const stored = localStorage.getItem(SELECTED_PLACE_KEY)
         if (stored) {
           const parsed = JSON.parse(stored)
-          if (props.eventId && parsed?.eventId !== props.eventId) {
+          const storedEventId = String(parsed?.eventId ?? '')
+          const currentEventId = String(props.eventId || '')
+
+          if (currentEventId && storedEventId && storedEventId !== currentEventId) {
             selectedPlace.value = null
             placeId.value = ''
           } else {
@@ -190,6 +193,10 @@ export default defineComponent({
     watch(() => props.places, (newPlaces) => {
       placesToShow.value = [...(newPlaces || [])]
     }, { deep: true })
+
+    watch(() => props.eventId, () => {
+      loadSelectedPlace()
+    })
 
     const displayName = computed(() => {
       const found = (props.people || []).find((p:Person) => {
