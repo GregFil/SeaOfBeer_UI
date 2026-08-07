@@ -2,9 +2,9 @@
   <div :class="['menu-backdrop', open ? 'open' : '']" @click="emit('close')"></div>
   <nav :class="['app-menu', open ? 'open' : '']" :aria-hidden="!open">
     <ul style="color:#003B4F; margin-left: auto;">
-      <li><a :href="homeHref">Quarterdeck</a></li>
-      <li><a :href="crewHref">Crew</a></li>
-      <li><a :href="covesHref">Coves</a></li>
+      <li><a :href="homeHref" @click="emit('close')">Quarterdeck</a></li>
+      <li><a :href="crewHref" @click="emit('close')">Crew</a></li>
+      <li><a :href="covesHref" @click="emit('close')">Coves</a></li>
     </ul>
   </nav>
 </template>
