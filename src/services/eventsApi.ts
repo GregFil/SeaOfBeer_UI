@@ -1,4 +1,4 @@
-const PRIMARY_API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://api.seaofbeer.com'
+const PRIMARY_API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
 const EVENTS_CREATE_PATH = '/api/Events/create'
 const EVENTS_BY_ID_PATH = '/api/Events'
 const EVENTS_EDIT_PATH = '/api/Events/edit'

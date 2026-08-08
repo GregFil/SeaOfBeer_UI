@@ -15,14 +15,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://seaofbeer.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
       '/rsvp': {
-        target: 'https://seaofbeer.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       }
     }
   }

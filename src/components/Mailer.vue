@@ -29,7 +29,7 @@ const props = defineProps<{ people: Person[]; organizerDefault?: string; subject
 const organizer = ref(props.organizerDefault || '')
 const subject = ref(props.subjectDefault || 'Invitation')
 const message = ref('Hello, please reply using the Yes/No links below.')
-const API_BASE = (import.meta && (import.meta as any).env && (import.meta as any).env.VITE_API_BASE) || 'https://api.seaofbeer.com'
+const API_BASE = (import.meta && (import.meta as any).env && (import.meta as any).env.VITE_API_BASE) || 'https://localhost:7079'
 
 function compose() {
   if (!organizer.value) return props.showNotification ? props.showNotification('Provide organizer email', 'error') : alert('Provide organizer email')

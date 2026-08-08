@@ -10,7 +10,7 @@
 
       <Admin v-if="currentPage === 'admin'" :existing="people" :showNotification="showNotification" :onAddPerson="addPerson" :onDeletePerson="removePerson" />
       <People v-else-if="currentPage === 'crew'" :existing="people" :showNotification="showNotification" :onAddPerson="addPerson" :onEditPerson="editPerson" :onDeletePerson="removePerson" />
-      <Places v-else-if="currentPage === 'coves'" :admin="true" :showNotification="showNotification" />
+      <Places v-else-if="currentPage === 'coves'" :admin="true" :showNotification="showNotification" @loaded="handlePlacesLoaded" />
 
       <main class="container home-container" v-if="currentPage === 'home'">
         <div class="home-shortcuts" style="display:flex; gap:8px; justify-content:center; margin-bottom:6px; flex-wrap:wrap">
@@ -132,7 +132,7 @@ import { eventsApi, type EventApiItem } from './services/eventsApi'
 import { usersApi, type UserApiItem, type UserUpsertPayload } from './services/usersApi'
 
 // Types
-type Person = { userId?: number; name: string; email: string }
+type Person = { userId?: number; name: string; email: string; active?: boolean }
 type Place = { id: string; name: string; address: string; map?: string }
 type ApiPlace = { placeId: number; name: string; address: string; link?: string }
 type NotificationType = 'error' | 'success' | 'info'
@@ -143,7 +143,7 @@ type VoteChoice = 'yes' | 'no' | 'not-sure'
 // Constants
 const NOTIFICATION_TIMEOUT = 4000
 const RESPONSES_STORAGE_KEY = 'responses_v1'
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://api.seaofbeer.com'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
 const VOTE_VALUE_BY_CHOICE: Record<VoteChoice, number> = {
   yes: 1,
   no: 0,
@@ -154,6 +154,7 @@ const VOTE_VALUE_BY_CHOICE: Record<VoteChoice, number> = {
 const people = ref<Person[]>([])
 const places = ref<Place[]>([])
 const notify = ref<NotificationState>({ message: '', type: 'info', visible: false })
+const crewUsersLoaded = ref(false)
 const isSending = ref(false)
 const menuOpen = ref(false)
 const currentPage = ref<PageType>('home')
@@ -318,25 +319,46 @@ async function addPerson(person: Person) {
 
 async function removePerson(email: string) {
   try {
-    const removed = (people.value || []).find((p) => p.email === email)
-    people.value = (people.value || []).filter((p) => p.email !== email)
+    const normalizedEmail = (email || '').trim().toLowerCase()
+    const apiUsers = await usersApi.list()
+    const targetUser = apiUsers.find((user) => (user.email || '').trim().toLowerCase() === normalizedEmail)
+    const targetUserId = targetUser?.userId ?? targetUser?.id
+
+    if (targetUserId == null) {
+      throw new Error('User id is required to delete crew member')
+    }
+
+    await usersApi.delete(targetUserId)
+    await loadPeople()
+
+    const removed = (people.value || []).find((p) => (p.email || '').trim().toLowerCase() === normalizedEmail)
     if (removed) {
       delete responses.value[getResponseKey(removed)]
       saveResponses()
     }
   } catch (e) {
     console.error('removePerson failed:', e)
+    showNotification(`Failed to delete crew member: ${String((e as Error)?.message || e)}`, 'error')
   }
 }
 
-async function editPerson(oldEmail: string, person: Person) {
+async function editPerson(userId: number | null | undefined, person: Person) {
   try {
-    const existing = (people.value || []).find((p) => p.email === oldEmail)
-    if (!existing || existing.userId == null) {
+    const normalizedEmail = (person.email || '').trim().toLowerCase()
+    const apiUsers = await usersApi.list()
+    const existing = apiUsers.find((user) => {
+      if (userId != null && (user.userId ?? user.id) != null) {
+        return (user.userId ?? user.id) === userId
+      }
+      return (user.email || '').trim().toLowerCase() === normalizedEmail
+    })
+
+    const resolvedUserId = existing?.userId ?? existing?.id
+    if (resolvedUserId == null) {
       throw new Error('User id is required to edit crew member')
     }
 
-    await usersApi.edit(existing.userId, toUserPayload(person))
+    await usersApi.edit(resolvedUserId, toUserPayload(person))
     await loadPeople()
   } catch (e) {
     console.error('editPerson failed:', e)
@@ -354,6 +376,7 @@ function toUserPayload(person: Person): UserUpsertPayload {
     lastName,
     fullName,
     email: person.email.trim(),
+    active: person.active !== false,
   }
 }
 
@@ -364,6 +387,7 @@ function toPerson(user: UserApiItem): Person {
     userId: user.userId,
     name: resolvedName,
     email: (user.email || '').trim(),
+    active: typeof user.active === 'boolean' ? user.active : true,
   }
 }
 
@@ -732,6 +756,10 @@ function formatTimeWithAmPm(time24: string): string {
 
 async function manualSend() {
   if (people.value.length === 0) {
+    await loadPeople()
+  }
+
+  if (people.value.length === 0) {
     showNotification('No people in the list', 'error')
     return
   }
@@ -792,7 +820,12 @@ function resetVoting() {
 
 // Data Loading
 const loadPeople = async () => {
+  if (currentPage.value !== 'crew') {
+    return
+  }
+
   try {
+    crewUsersLoaded.value = true
     const apiUsers = await usersApi.list()
     const mapped = apiUsers.map((user) => toPerson(user))
 
@@ -806,6 +839,7 @@ const loadPeople = async () => {
   } catch (e) {
     console.warn('Failed to load people:', e)
     people.value = []
+    crewUsersLoaded.value = false
   }
 }
 
@@ -869,23 +903,8 @@ function applyEventToHomeState(event: EventApiItem) {
   }
 }
 
-const loadPlaces = async () => {
-  try {
-    const response = await fetch(`${API_BASE}/api/admin/Places?t=${Date.now()}`, { cache: 'no-store' })
-    if (!response.ok) {
-      const errText = await response.text().catch(() => '')
-      throw new Error(errText || `HTTP ${response.status}`)
-    }
-    const data = await response.json()
-    if (!Array.isArray(data)) {
-      throw new Error('Invalid places API response')
-    }
-
-    places.value = data.map((item) => toPlace(item as ApiPlace))
-  } catch (e) {
-    console.warn('Failed to load places:', e)
-    places.value = []
-  }
+const handlePlacesLoaded = (loadedPlaces: Place[]) => {
+  places.value = loadedPlaces
 }
 
 const loadSelectedPlace = () => {
@@ -950,12 +969,8 @@ onMounted(async () => {
     } catch (e) {
       console.error('Failed to load event details:', e)
       showNotification('Failed to load event details', 'error')
-      await loadPeople()
     }
-  } else {
-    await loadPeople()
   }
-  await loadPlaces()
   loadResponses()
   if (currentEventId.value) {
     try {
@@ -1068,10 +1083,12 @@ onUnmounted(() => {
   }
 })
 
-// Reload places when returning home to sync with changes made in Coves section
-watch(currentPage, (newPage) => {
-  if (newPage === 'home') {
-    loadPlaces()
+// Load crew data when entering Crew.
+watch(currentPage, async (newPage) => {
+  if (newPage === 'crew') {
+    if (!crewUsersLoaded.value || people.value.length === 0) {
+      await loadPeople()
+    }
   }
 })
 
@@ -1103,7 +1120,9 @@ watch(currentEventId, async (newEventId, oldEventId) => {
     return
   }
 
-  await loadPeople()
+  if (currentPage.value === 'crew') {
+    await loadPeople()
+  }
   loadResponses()
   normalizeResponses()
   isPastEvent.value = false

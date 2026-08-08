@@ -1,9 +1,43 @@
 <template>
-  <section class="panel">
+  <section class="panel schedule-panel-wrapper">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <h3 style="color:#003B4F;margin:0">Coves</h3>
-      <q-btn v-if="admin" @click="showForm = !showForm" icon="add" label="Add new" flat class="add-cove-btn" title="Add cove" />
+      <q-btn v-if="admin" @click="openAddForm()" icon="add" label="Add new" flat class="add-cove-btn" title="Add cove" />
     </div>
+
+    <div v-if="showSchedulePanel" class="schedule-panel">
+      <div class="schedule-title">Schedule next event</div>
+      <div class="schedule-grid">
+        <label class="schedule-field">
+          <span>Enabled</span>
+          <input v-model="scheduleEnabled" type="checkbox" />
+        </label>
+        <label class="schedule-field">
+          <span>Day</span>
+          <div class="schedule-day-input">
+            <input v-model.number="scheduleDayOfWeek" type="number" min="0" max="6" />
+            <span class="schedule-day-label">{{ getDayName(scheduleDayOfWeek) }}</span>
+          </div>
+        </label>
+        <label class="schedule-field">
+          <span>Hour</span>
+          <input v-model.number="scheduleHour" type="number" min="0" max="23" />
+        </label>
+        <label class="schedule-field">
+          <span>Minute</span>
+          <input v-model.number="scheduleMinute" type="number" min="0" max="59" />
+        </label>
+        <label class="schedule-field schedule-field-wide">
+          <span>Updated by</span>
+          <input v-model="scheduleUpdatedBy" type="text" placeholder="admin-ui" />
+        </label>
+      </div>
+      <div class="schedule-actions">
+        <button type="button" class="schedule-save" @click="saveScheduleConfig">Save</button>
+        <button type="button" class="schedule-cancel" @click="showSchedulePanel = false">Cancel</button>
+      </div>
+    </div>
+
     <form v-if="admin && showForm" @submit.prevent="editingId ? saveEdit() : addPlace()" class="admin-form" style="border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 16px;">
       <label>
         Name
@@ -38,6 +72,8 @@
         </div>
       </li>
     </ul>
+
+    <q-btn flat dense icon="schedule" class="schedule-trigger" title="Schedule next event" @click="openSchedulePanel" />
   </section>
 </template>
 
@@ -47,6 +83,7 @@ type Place = { id: string; name: string; address: string; map?: string }
 type ApiPlace = { placeId: number; name: string; address: string; link?: string }
 
 const props = defineProps<{ admin?: boolean; showNotification?: (m:string,t?:'info'|'success'|'error')=>void }>()
+const emit = defineEmits<{ (e: 'loaded', places: Place[]): void }>()
 const admin = props.admin || false
 const showNotification = props.showNotification
 
@@ -55,8 +92,14 @@ const name = ref('')
 const address = ref('')
 const map = ref('')
 const showForm = ref(false)
+const showSchedulePanel = ref(false)
+const scheduleEnabled = ref(true)
+const scheduleDayOfWeek = ref(0)
+const scheduleHour = ref(0)
+const scheduleMinute = ref(0)
+const scheduleUpdatedBy = ref('admin-ui')
 const editingId = ref<string | null>(null)
-const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://api.seaofbeer.com'
+const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
 const PLACES_API_BASE = `${API_BASE}/api/admin/Places`
 
 function mapApiToPlace(apiPlace: ApiPlace): Place {
@@ -66,6 +109,12 @@ function mapApiToPlace(apiPlace: ApiPlace): Place {
     address: apiPlace.address,
     map: apiPlace.link || '',
   }
+}
+
+function getDayName(day: number): string {
+  const normalizedDay = Number(day)
+  const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  return names[normalizedDay] || 'Unknown'
 }
 
 async function load() {
@@ -81,7 +130,9 @@ async function load() {
       throw new Error('Invalid API response for places list')
     }
 
-    places.value = data.map(mapApiToPlace)
+    const mappedPlaces = data.map(mapApiToPlace)
+    places.value = mappedPlaces
+    emit('loaded', mappedPlaces)
   } catch (e) {
     console.error('Places load error:', e)
     const errorMsg = e instanceof Error ? e.message : String(e)
@@ -128,12 +179,74 @@ async function addPlace() {
 async function del(id: string) {
   if (!confirm('Delete this place?')) return
   try {
-    places.value = places.value.filter(p => p.id !== id)
+    const numericId = Number(id)
+    if (!Number.isFinite(numericId)) {
+      throw new Error('Invalid cove id')
+    }
+
+    const response = await fetch(`${PLACES_API_BASE}/delete/${numericId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '')
+      throw new Error(errText || `HTTP ${response.status}`)
+    }
+
+    await load()
     if (showNotification) showNotification('Place removed', 'success')
-  } catch (e) { 
+  } catch (e) {
     console.error('Delete place failed:', e)
-    if (showNotification) showNotification('Delete failed', 'error') 
+    if (showNotification) showNotification('Delete failed', 'error')
   }
+}
+
+function openSchedulePanel() {
+  const now = new Date()
+  const jsDay = now.getDay()
+  scheduleEnabled.value = true
+  scheduleDayOfWeek.value = jsDay === 0 ? 6 : jsDay - 1
+  scheduleHour.value = now.getHours()
+  scheduleMinute.value = now.getMinutes()
+  scheduleUpdatedBy.value = 'admin-ui'
+  showSchedulePanel.value = true
+}
+
+async function saveScheduleConfig() {
+  try {
+    const payload = {
+      enabled: scheduleEnabled.value,
+      dayOfWeek: Number(scheduleDayOfWeek.value),
+      hour: Number(scheduleHour.value),
+      minute: Number(scheduleMinute.value),
+      updatedBy: (scheduleUpdatedBy.value || 'admin-ui').trim(),
+    }
+
+    const response = await fetch(`${API_BASE}/api/Schedule/config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '')
+      throw new Error(text || 'Failed to save schedule config')
+    }
+
+    if (showNotification) showNotification('Schedule saved', 'success')
+    showSchedulePanel.value = false
+  } catch (e) {
+    if (showNotification) showNotification(`Failed to save schedule: ${String((e as Error)?.message || e)}`, 'error')
+  }
+}
+
+function openAddForm() {
+  editingId.value = null
+  name.value = ''
+  address.value = ''
+  map.value = ''
+  showForm.value = true
 }
 
 function startEdit(place: Place) {
@@ -153,8 +266,8 @@ async function saveEdit() {
 
   const id = editingId.value
   try {
-    const response = await fetch(`${PLACES_API_BASE}/${id}`, {
-      method: 'PUT',
+    const response = await fetch(`${PLACES_API_BASE}/edit/${id}`, {
+      method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
       body: JSON.stringify({
@@ -196,6 +309,104 @@ function cancelEdit() {
 
 .admin-form label { display:block; margin-bottom:8px }
 .add-cove-btn { color: #003B4F; font-size: 1.1em; font-family: 'Pirata One', cursive; font-weight: 700; }
+
+.schedule-panel-wrapper {
+  position: relative;
+}
+
+.schedule-trigger {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  color: #003B4F;
+  opacity: 0.75;
+  z-index: 2;
+}
+
+.schedule-panel {
+  border: 1px solid #d8e1e8;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.schedule-title {
+  font-weight: 700;
+  color: #003B4F;
+  margin-bottom: 8px;
+}
+
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9em;
+  color: #3f4a54;
+}
+
+.schedule-field-wide {
+  grid-column: 1 / -1;
+}
+
+.schedule-field input {
+  border: 1px solid #d8e1e8;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.schedule-day-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #d8e1e8;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #fff;
+}
+
+.schedule-day-input input {
+  border: 0;
+  outline: none;
+  padding: 0;
+  width: 36px;
+  background: transparent;
+}
+
+.schedule-day-label {
+  font-size: 0.9em;
+  color: #003B4F;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.schedule-save,
+.schedule-cancel {
+  border: 1px solid #cbd5df;
+  border-radius: 6px;
+  padding: 7px 10px;
+  cursor: pointer;
+  background: #fff;
+  color: #003B4F;
+}
+
+.schedule-save {
+  background: #1F3A5F;
+  color: white;
+  border-color: #1F3A5F;
+}
 
 .cove-row {
   flex-wrap: nowrap;
