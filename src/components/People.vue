@@ -1,14 +1,14 @@
 <template>
   <section class="panel">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="color:#003B4F;margin:0">Crew Members</h3>
+      <h3 style="color:#003B4F;margin:0;font-size:22px">Crew Members</h3>
       <div style="display:flex;align-items:center;gap:8px">
         <q-btn @click="openAddForm" icon="add" label="Add new" flat class="add-member-btn" title="Add member" />
       </div>
     </div>
 
-    <form v-if="showForm" @submit.prevent="editingUserId !== null ? saveEdit() : submit()" class="admin-form" style="border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 16px;">
-      <div style="font-weight:700;color:#003B4F;margin-bottom:8px">{{ editingUserId !== null ? 'Edit crew member' : 'Add crew member' }}</div>
+    <form v-if="showForm" @submit.prevent="submit()" class="admin-form" style="border: 1px solid #e0e0e0; padding: 12px; margin-bottom: 16px;">
+      <div style="font-weight:700;color:#003B4F;margin-bottom:8px">Add crew member</div>
       <label>
         Name
         <input ref="nameRef" v-model="name" placeholder="Enter crew member name" style="width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #e6edf3; border-radius: 6px;" />
@@ -17,12 +17,14 @@
         Email
         <input ref="emailRef" v-model="email" placeholder="Enter email" style="width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #e6edf3; border-radius: 6px;" />
       </label>
-      <label style="display:flex;align-items:center;gap:8px;margin-top:8px">
-        <input type="checkbox" v-model="active" />
-        <span>Active</span>
-      </label>
+      <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+        <label style="display:inline-flex !important; align-items:center; gap:2px; margin:0; font-size:14px; line-height:1; white-space:nowrap;">
+          <input type="checkbox" v-model="active" style="margin:0; padding:0; vertical-align:middle;" />
+          <span style="margin-left:0">Active</span>
+        </label>
+      </div>
       <div style="margin-top:8px;display:flex;gap:8px">
-        <button type="submit" style="padding: 8px 12px; background-color: #1F3A5F; color: white; border: 0; border-radius: 6px; cursor: pointer; font-weight: 500;">{{ editingUserId !== null ? 'Save changes' : 'Add crew member' }}</button>
+        <button type="submit" style="padding: 8px 12px; background-color: #1F3A5F; color: white; border: 0; border-radius: 6px; cursor: pointer; font-weight: 500;">Add crew member</button>
         <button type="button" @click="cancelEdit()" style="padding: 8px 12px; background-color: transparent; color: #666; border: 1px solid #ccc; border-radius: 6px; cursor: pointer;">Cancel</button>
       </div>
     </form>
@@ -31,8 +33,7 @@
       <li v-for="(p,i) in displayPeople" :key="i" class="panel" style="margin-bottom:8px">
         <div class="member-row" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div class="member-meta">
-            <div class="member-name" :style="{ fontWeight: 700, color: p.active === false ? '#999' : 'inherit', textDecoration: p.active === false ? 'line-through' : 'none' }">{{ p.name }}</div>
-            <a class="member-email" :href="`mailto:${p.email}`" :style="{ color: p.active === false ? '#999' : 'var(--muted)', textDecoration: p.active === false ? 'line-through' : 'none' }">{{ p.email }}</a>
+            <div class="member-name" :style="{ fontWeight: 700, color: p.active === false ? '#999' : 'inherit', textDecoration: p.active === false ? 'line-through' : 'none', fontSize: '22px' }">{{ p.name }}</div>
           </div>
           <div class="member-actions" style="display:flex;gap:8px;align-items:center">
             <button
@@ -44,7 +45,6 @@
             >
               <span class="status-mark" :class="p.active === false ? 'inactive-mark' : 'active-mark'">{{ p.active === false ? '✕' : '✓' }}</span>
             </button>
-            <q-btn @click="startEdit(p)" icon="edit" flat dense style="color:#003B4F; border: 1px solid #003B4F; border-radius: 4px;" />
             <q-btn @click="removePerson(p)" icon="delete_outline" flat dense />
           </div>
         </div>
@@ -64,7 +64,6 @@ const name = ref('')
 const email = ref('')
 const active = ref(true)
 const showForm = ref(false)
-const editingUserId = ref<number | null>(null)
 const nameRef = ref<HTMLInputElement|null>(null)
 const emailRef = ref<HTMLInputElement|null>(null)
 
@@ -109,23 +108,14 @@ function submit() {
 }
 
 function openAddForm() {
-  editingUserId.value = null
+  if (showForm.value) {
+    cancelEdit()
+    return
+  }
+
   name.value = ''
   email.value = ''
   active.value = true
-  showForm.value = true
-}
-
-function startEdit(p: Person) {
-  const selectedPerson = (props.existing || []).find((item) => {
-    if (item.userId != null && p.userId != null) return item.userId === p.userId
-    return Boolean(item.email && p.email && item.email === p.email)
-  }) || p
-
-  editingUserId.value = selectedPerson.userId ?? null
-  name.value = selectedPerson.name || ''
-  email.value = selectedPerson.email || ''
-  active.value = selectedPerson.active !== false
   showForm.value = true
 
   nextTick(() => {
@@ -135,26 +125,6 @@ function startEdit(p: Person) {
       emailRef.value.setSelectionRange?.(0, value.length)
     }
   })
-}
-
-function saveEdit() {
-  if (!name.value.trim() || !email.value.trim()) {
-    props.showNotification('Name and email are required', 'error')
-    if (!name.value.trim()) nameRef.value?.focus()
-    else emailRef.value?.focus()
-    return
-  }
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)
-  if (!emailValid) {
-    props.showNotification('Please enter a valid email address', 'error')
-    emailRef.value?.focus()
-    return
-  }
-  if (props.onEditPerson) {
-    props.onEditPerson(editingUserId.value, { userId: editingUserId.value ?? undefined, name: name.value.trim(), email: email.value.trim(), active: active.value })
-    cancelEdit()
-    props.showNotification('Crew member updated', 'success')
-  }
 }
 
 async function toggleActive(p: Person) {
@@ -179,7 +149,6 @@ async function toggleActive(p: Person) {
 }
 
 function cancelEdit() {
-  editingUserId.value = null
   name.value = ''
   email.value = ''
   active.value = true

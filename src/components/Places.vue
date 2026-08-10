@@ -1,7 +1,7 @@
 <template>
   <section class="panel schedule-panel-wrapper">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h3 style="color:#003B4F;margin:0">Coves</h3>
+      <h3 style="color:#003B4F;margin:0;font-size:22px">Coves</h3>
       <q-btn v-if="admin" @click="openAddForm()" icon="add" label="Add new" flat class="add-cove-btn" title="Add cove" />
     </div>
 
@@ -61,8 +61,8 @@
       <li v-for="p in places" :key="p.id" class="panel" style="margin-bottom:8px">
         <div class="cove-row" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div class="cove-meta">
-            <div class="cove-name" style="font-weight:700">{{ p.name }}</div>
-            <div class="cove-address" style="color:var(--muted)">{{ p.address }}</div>
+            <div class="cove-name" style="font-weight:700; font-size:22px">{{ p.name }}</div>
+            <div class="cove-address" style="color:var(--muted); font-size:18px">{{ p.address }}</div>
           </div>
           <div class="cove-actions" style="display:flex;gap:8px;align-items:center">
             <a class="person-email" :href="p.map || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.address)}`" target="_blank" rel="noreferrer">Map</a>
@@ -241,6 +241,11 @@ async function saveScheduleConfig() {
 }
 
 function openAddForm() {
+  if (showForm.value) {
+    cancelEdit()
+    return
+  }
+
   editingId.value = null
   name.value = ''
   address.value = ''
