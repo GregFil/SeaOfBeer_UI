@@ -86,9 +86,8 @@ async function fetchSelectionData() {
 
 function openSchedulePanel() {
   const now = new Date()
-  const jsDay = now.getDay()
   scheduleEnabled.value = true
-  scheduleDayOfWeek.value = jsDay === 0 ? 6 : jsDay - 1
+  scheduleDayOfWeek.value = now.getDay()
   scheduleHour.value = now.getHours()
   scheduleMinute.value = now.getMinutes()
   scheduleUpdatedBy.value = 'admin-ui'

@@ -113,7 +113,7 @@ function mapApiToPlace(apiPlace: ApiPlace): Place {
 
 function getDayName(day: number): string {
   const normalizedDay = Number(day)
-  const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
   return names[normalizedDay] || 'Unknown'
 }
 
@@ -204,9 +204,8 @@ async function del(id: string) {
 
 function openSchedulePanel() {
   const now = new Date()
-  const jsDay = now.getDay()
   scheduleEnabled.value = true
-  scheduleDayOfWeek.value = jsDay === 0 ? 6 : jsDay - 1
+  scheduleDayOfWeek.value = now.getDay()
   scheduleHour.value = now.getHours()
   scheduleMinute.value = now.getMinutes()
   scheduleUpdatedBy.value = 'admin-ui'
