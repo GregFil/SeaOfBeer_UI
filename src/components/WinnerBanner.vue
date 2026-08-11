@@ -7,7 +7,7 @@
             <span>Beer Captain:</span>
             <span>{{ displayName }}</span>
           </div>
-          <q-btn v-if="isCaptainView && tokenValid" :disable="readOnly" @click="openPlacesModal" icon="touch_app" label="Select Cove" flat style="color:#003B4F; font-family:'Pirata One',cursive; font-weight:700; font-size:1.1em; white-space:nowrap" />
+          <q-btn v-if="(isCaptainView && tokenValid) || !!winner" :disable="readOnly" @click="openPlacesModal" icon="touch_app" label="Select Cove" flat style="color:#003B4F; font-family:'Pirata One',cursive; font-weight:700; font-size:1.1em; white-space:nowrap" />
         </div>
 
         <div style="margin-top:12px;width:100%">
@@ -185,6 +185,10 @@ export default defineComponent({
       loadSelectedPlace()
       placesToShow.value = [...(props.places || [])]
     })
+
+    watch(() => props.places, (newPlaces) => {
+      placesToShow.value = [...(newPlaces || [])]
+    }, { deep: true })
 
     onUnmounted(() => {
       mounted = false

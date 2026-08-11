@@ -6,34 +6,30 @@
     </div>
 
     <div v-if="showSchedulePanel" class="schedule-panel">
-      <div class="schedule-title">Schedule next event</div>
+      <div class="schedule-title">Create event</div>
       <div class="schedule-grid">
         <label class="schedule-field">
-          <span>Enabled</span>
-          <input v-model="scheduleEnabled" type="checkbox" />
+          <span>Date</span>
+          <input v-model="eventDate" type="date" />
         </label>
         <label class="schedule-field">
-          <span>Day</span>
-          <div class="schedule-day-input">
-            <input v-model.number="scheduleDayOfWeek" type="number" min="0" max="6" />
-            <span class="schedule-day-label">{{ getDayName(scheduleDayOfWeek) }}</span>
-          </div>
+          <span>Time</span>
+          <input v-model="eventTime" type="time" />
         </label>
         <label class="schedule-field">
-          <span>Hour</span>
-          <input v-model.number="scheduleHour" type="number" min="0" max="23" />
+          <span>Cove</span>
+          <select v-model.number="eventPlaceId">
+            <option :value="0" disabled>Select a cove</option>
+            <option v-for="place in places" :key="place.id" :value="Number(place.id)">{{ place.name }}</option>
+          </select>
         </label>
         <label class="schedule-field">
-          <span>Minute</span>
-          <input v-model.number="scheduleMinute" type="number" min="0" max="59" />
-        </label>
-        <label class="schedule-field schedule-field-wide">
-          <span>Updated by</span>
-          <input v-model="scheduleUpdatedBy" type="text" placeholder="admin-ui" />
+          <span>Status</span>
+          <input v-model="eventStatus" type="checkbox" />
         </label>
       </div>
       <div class="schedule-actions">
-        <button type="button" class="schedule-save" @click="saveScheduleConfig">Save</button>
+        <button type="button" class="schedule-save" @click="saveScheduleConfig">Create event</button>
         <button type="button" class="schedule-cancel" @click="showSchedulePanel = false">Cancel</button>
       </div>
     </div>
@@ -73,7 +69,7 @@
       </li>
     </ul>
 
-    <q-btn flat dense icon="schedule" class="schedule-trigger" title="Schedule next event" @click="openSchedulePanel" />
+    <q-btn flat dense icon="schedule" class="schedule-trigger" title="Create event" @click="openSchedulePanel" />
   </section>
 </template>
 
@@ -93,11 +89,10 @@ const address = ref('')
 const map = ref('')
 const showForm = ref(false)
 const showSchedulePanel = ref(false)
-const scheduleEnabled = ref(true)
-const scheduleDayOfWeek = ref(0)
-const scheduleHour = ref(0)
-const scheduleMinute = ref(0)
-const scheduleUpdatedBy = ref('admin-ui')
+const eventDate = ref('')
+const eventTime = ref('18:30')
+const eventPlaceId = ref(0)
+const eventStatus = ref(true)
 const editingId = ref<string | null>(null)
 const API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
 const PLACES_API_BASE = `${API_BASE}/api/admin/Places`
@@ -111,10 +106,24 @@ function mapApiToPlace(apiPlace: ApiPlace): Place {
   }
 }
 
-function getDayName(day: number): string {
-  const normalizedDay = Number(day)
-  const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-  return names[normalizedDay] || 'Unknown'
+function getDefaultDateValue(): string {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function syncSelectedPlaceFromList(list: Place[]) {
+  if (!list.length) {
+    eventPlaceId.value = 0
+    return
+  }
+
+  const ids = new Set(list.map((place) => Number(place.id)))
+  if (!ids.has(eventPlaceId.value)) {
+    eventPlaceId.value = Number(list[0].id)
+  }
 }
 
 async function load() {
@@ -132,6 +141,7 @@ async function load() {
 
     const mappedPlaces = data.map(mapApiToPlace)
     places.value = mappedPlaces
+    syncSelectedPlaceFromList(mappedPlaces)
     emit('loaded', mappedPlaces)
   } catch (e) {
     console.error('Places load error:', e)
@@ -203,26 +213,29 @@ async function del(id: string) {
 }
 
 function openSchedulePanel() {
-  const now = new Date()
-  scheduleEnabled.value = true
-  scheduleDayOfWeek.value = now.getDay()
-  scheduleHour.value = now.getHours()
-  scheduleMinute.value = now.getMinutes()
-  scheduleUpdatedBy.value = 'admin-ui'
+  eventDate.value = getDefaultDateValue()
+  eventTime.value = '18:30'
+  eventStatus.value = true
+  syncSelectedPlaceFromList(places.value)
   showSchedulePanel.value = true
 }
 
 async function saveScheduleConfig() {
   try {
-    const payload = {
-      enabled: scheduleEnabled.value,
-      dayOfWeek: Number(scheduleDayOfWeek.value),
-      hour: Number(scheduleHour.value),
-      minute: Number(scheduleMinute.value),
-      updatedBy: (scheduleUpdatedBy.value || 'admin-ui').trim(),
+    const placeId = Number(eventPlaceId.value || 0)
+    if (!placeId) {
+      if (showNotification) showNotification('Please select a cove', 'error')
+      return
     }
 
-    const response = await fetch(`${API_BASE}/api/Schedule/config`, {
+    const payload = {
+      eventDate: eventDate.value || getDefaultDateValue(),
+      eventTime: `${eventTime.value || '18:30'}:00`,
+      placeId,
+      status: Boolean(eventStatus.value),
+    }
+
+    const response = await fetch(`${API_BASE}/api/events/schedule`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -230,13 +243,13 @@ async function saveScheduleConfig() {
 
     if (!response.ok) {
       const text = await response.text().catch(() => '')
-      throw new Error(text || 'Failed to save schedule config')
+      throw new Error(text || 'Failed to create event')
     }
 
-    if (showNotification) showNotification('Schedule saved', 'success')
+    if (showNotification) showNotification('Event created', 'success')
     showSchedulePanel.value = false
   } catch (e) {
-    if (showNotification) showNotification(`Failed to save schedule: ${String((e as Error)?.message || e)}`, 'error')
+    if (showNotification) showNotification(`Failed to create event: ${String((e as Error)?.message || e)}`, 'error')
   }
 }
 

@@ -173,6 +173,7 @@ const isPastEvent = ref(false)
 const crewTimes = ref<Record<string, string>>({}) // Store time for each crew member
 let countdownInterval: any = null
 let eventRefreshInterval: any = null
+const PLACES_API_BASE = `${API_BASE}/api/admin/Places`
 
 // UI Actions
 const onToggleMenu = () => { menuOpen.value = !menuOpen.value }
@@ -907,6 +908,34 @@ const handlePlacesLoaded = (loadedPlaces: Place[]) => {
   places.value = loadedPlaces
 }
 
+async function loadPlaces() {
+  try {
+    const response = await fetch(`${PLACES_API_BASE}?t=${Date.now()}`, { cache: 'no-store' })
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '')
+      throw new Error(errText || `HTTP ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid API response for places list')
+    }
+
+    const mappedPlaces = data.map((apiPlace: any) => ({
+      id: String(apiPlace.placeId ?? apiPlace.id ?? ''),
+      name: apiPlace.name || '',
+      address: apiPlace.address || '',
+      map: typeof apiPlace.link === 'string' ? apiPlace.link : '',
+    }))
+
+    places.value = mappedPlaces
+    return mappedPlaces
+  } catch (e) {
+    console.error('Failed to load places for home view:', e)
+    return []
+  }
+}
+
 const loadSelectedPlace = () => {
   try {
     const stored = localStorage.getItem('selected_place_v1')
@@ -975,6 +1004,8 @@ onMounted(async () => {
   }
   window.addEventListener('storage', handleStorageChange)
   
+  await loadPlaces()
+
   // Load data first
   if (currentEventId.value) {
     try {
@@ -1141,6 +1172,10 @@ watch(currentEventId, async (newEventId, oldEventId) => {
 
   if (currentPage.value === 'crew') {
     await loadPeople()
+  }
+
+  if (currentPage.value === 'home') {
+    await loadPlaces()
   }
   loadResponses()
   normalizeResponses()
