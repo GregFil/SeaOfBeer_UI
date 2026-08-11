@@ -16,17 +16,6 @@
           <span>Time</span>
           <input v-model="eventTime" type="time" />
         </label>
-        <label class="schedule-field">
-          <span>Cove</span>
-          <select v-model.number="eventPlaceId">
-            <option :value="0" disabled>Select a cove</option>
-            <option v-for="place in places" :key="place.id" :value="Number(place.id)">{{ place.name }}</option>
-          </select>
-        </label>
-        <label class="schedule-field">
-          <span>Status</span>
-          <input v-model="eventStatus" type="checkbox" />
-        </label>
       </div>
       <div class="schedule-actions">
         <button type="button" class="schedule-save" @click="saveScheduleConfig">Create event</button>
@@ -120,9 +109,8 @@ function syncSelectedPlaceFromList(list: Place[]) {
     return
   }
 
-  const ids = new Set(list.map((place) => Number(place.id)))
-  if (!ids.has(eventPlaceId.value)) {
-    eventPlaceId.value = Number(list[0].id)
+  if (!list.some((place) => Number(place.id) === eventPlaceId.value)) {
+    eventPlaceId.value = 0
   }
 }
 
@@ -222,17 +210,9 @@ function openSchedulePanel() {
 
 async function saveScheduleConfig() {
   try {
-    const placeId = Number(eventPlaceId.value || 0)
-    if (!placeId) {
-      if (showNotification) showNotification('Please select a cove', 'error')
-      return
-    }
-
     const payload = {
       eventDate: eventDate.value || getDefaultDateValue(),
       eventTime: `${eventTime.value || '18:30'}:00`,
-      placeId,
-      status: Boolean(eventStatus.value),
     }
 
     const response = await fetch(`${API_BASE}/api/events/schedule`, {
