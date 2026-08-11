@@ -947,6 +947,19 @@ function normalizeResponses() {
   saveResponses()
 }
 
+async function refreshHomePageData() {
+  if (currentPage.value !== 'home' || !currentEventId.value) return
+
+  try {
+    await loadEventDetails(currentEventId.value)
+  } catch (e) {
+    console.error('Home page refresh failed:', e)
+  }
+
+  loadSelectedPlace()
+  loadCrewTimes()
+}
+
 // Lifecycle
 onMounted(async () => {
   checkHash()
@@ -971,6 +984,12 @@ onMounted(async () => {
       showNotification('Failed to load event details', 'error')
     }
   }
+
+  window.setInterval(() => {
+    if (currentPage.value === 'home' && currentEventId.value) {
+      refreshHomePageData()
+    }
+  }, 30000)
   loadResponses()
   if (currentEventId.value) {
     try {
