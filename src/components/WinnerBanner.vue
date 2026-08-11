@@ -65,7 +65,7 @@
   </div>
 
   <!-- panel below winner banner showing selected place details -->
-  <div v-if="selectedPlace && selectedPlace.place" class="panel" style="margin-top:8px; background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/banner.png'); background-position:center; background-repeat:no-repeat; background-size:calc(100% - 4px) calc(100% - 4px);">
+  <div v-if="canShowSelectedPlaceDetails && selectedPlace && selectedPlace.place" class="panel" style="margin-top:8px; background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/banner.png'); background-position:center; background-repeat:no-repeat; background-size:calc(100% - 4px) calc(100% - 4px);">
     <h4 style="color:#003B4F; margin:0 0 4px 0">Selected Cove</h4>
     <div class="selected-place-name" style="font-size:2em; font-weight:bold; color:#003B4F; margin:0">{{ selectedPlace.place.name }}</div>
     <div style="font-size:0.95em;color:#444;margin-top:4px">
@@ -202,6 +202,11 @@ export default defineComponent({
       loadSelectedPlace()
     })
 
+    const canShowSelectedPlaceDetails = computed(() => {
+      if (props.winner) return true
+      return isCaptainView.value && tokenValid.value
+    })
+
     const displayName = computed(() => {
       const found = (props.people || []).find((p:Person) => {
         if (p.email === props.winner) return true
@@ -295,7 +300,7 @@ export default defineComponent({
       showModal.value = true
     }
 
-    return { displayName, selectedPlace, placeId, confirmPlace, placesOptions, showModal, selectPlaceFromModal, showTimeModal, pendingPlace, timeOptions, selectedTime, confirmTime, formatTimeWithAmPm, placesToShow, openPlacesModal, tokenValid, isCaptainView }
+    return { displayName, selectedPlace, placeId, confirmPlace, placesOptions, showModal, selectPlaceFromModal, showTimeModal, pendingPlace, timeOptions, selectedTime, confirmTime, formatTimeWithAmPm, placesToShow, openPlacesModal, tokenValid, isCaptainView, canShowSelectedPlaceDetails }
   }
 })
 </script>
