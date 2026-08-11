@@ -7,7 +7,7 @@
             <span>Beer Captain:</span>
             <span>{{ displayName }}</span>
           </div>
-          <q-btn v-if="(isCaptainView && tokenValid) || !!winner" :disable="readOnly" @click="openPlacesModal" icon="touch_app" label="Select Cove" flat style="color:#003B4F; font-family:'Pirata One',cursive; font-weight:700; font-size:1.1em; white-space:nowrap" />
+          <q-btn v-if="canShowSelectCoveButton" :disable="readOnly" @click="openPlacesModal" icon="touch_app" label="Select Cove" flat style="color:#003B4F; font-family:'Pirata One',cursive; font-weight:700; font-size:1.1em; white-space:nowrap" />
         </div>
 
         <div style="margin-top:12px;width:100%">
@@ -155,8 +155,19 @@ export default defineComponent({
       return times
     })
 
+    const canShowSelectedPlaceDetails = computed(() => {
+      if (props.winner) return true
+      return isCaptainView.value && tokenValid.value
+    })
+
     function loadSelectedPlace() {
       try {
+        if (!canShowSelectedPlaceDetails.value) {
+          selectedPlace.value = null
+          placeId.value = ''
+          return
+        }
+
         const stored = localStorage.getItem(SELECTED_PLACE_KEY)
         if (stored) {
           const parsed = JSON.parse(stored)
@@ -202,11 +213,6 @@ export default defineComponent({
       loadSelectedPlace()
     })
 
-    const canShowSelectedPlaceDetails = computed(() => {
-      if (props.winner) return true
-      return isCaptainView.value && tokenValid.value
-    })
-
     const displayName = computed(() => {
       const found = (props.people || []).find((p:Person) => {
         if (p.email === props.winner) return true
@@ -214,6 +220,10 @@ export default defineComponent({
         return String(p.userId) === props.winner
       })
       return found ? found.name : 'Unknown'
+    })
+
+    watch([() => props.winner, () => isCaptainView.value, () => tokenValid.value], () => {
+      loadSelectedPlace()
     })
 
     const placesOptions = computed(() => (props.places || []).map(p => ({ label: `${p.name} — ${p.address}`, value: p.id })))
@@ -300,7 +310,7 @@ export default defineComponent({
       showModal.value = true
     }
 
-    return { displayName, selectedPlace, placeId, confirmPlace, placesOptions, showModal, selectPlaceFromModal, showTimeModal, pendingPlace, timeOptions, selectedTime, confirmTime, formatTimeWithAmPm, placesToShow, openPlacesModal, tokenValid, isCaptainView, canShowSelectedPlaceDetails }
+    return { displayName, selectedPlace, placeId, confirmPlace, placesOptions, showModal, selectPlaceFromModal, showTimeModal, pendingPlace, timeOptions, selectedTime, confirmTime, formatTimeWithAmPm, placesToShow, openPlacesModal, tokenValid, isCaptainView, canShowSelectedPlaceDetails, canShowSelectCoveButton }
   }
 })
 </script>
