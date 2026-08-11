@@ -155,6 +155,8 @@ export default defineComponent({
       return times
     })
 
+    const canShowSelectCoveButton = computed(() => isCaptainView.value && tokenValid.value)
+
     const canShowSelectedPlaceDetails = computed(() => {
       if (props.winner) return true
       return isCaptainView.value && tokenValid.value

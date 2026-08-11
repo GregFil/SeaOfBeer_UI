@@ -266,7 +266,9 @@ const hasCaptainAccessQuery = computed(() => {
   return Boolean(params.get('captinaid') || params.get('token'))
 })
 const effectiveWinner = computed(() => winner.value || captainIdFromQuery.value)
-const showWinnerBanner = computed(() => currentPage.value === 'home' && (!!winner.value || hasCaptainAccessQuery.value))
+const isCaptainLink = computed(() => !!currentEventId.value && hasCaptainAccessQuery.value)
+const canDisplaySelectedCove = computed(() => !!winner.value || isCaptainLink.value)
+const showWinnerBanner = computed(() => currentPage.value === 'home' && (!!winner.value || !!currentEventId.value))
 
 // Quorum countdown format
 const countdownDisplay = computed(() => {
@@ -880,7 +882,7 @@ function applyEventToHomeState(event: EventApiItem) {
   const placeAddress = typeof placePayload?.address === 'string' ? placePayload.address : ''
   const placeMap = typeof placePayload?.link === 'string' ? placePayload.link : typeof placePayload?.map === 'string' ? placePayload.map : ''
 
-  if (currentEventId.value && placeName) {
+  if (canDisplaySelectedCove.value && currentEventId.value && placeName) {
     const restoredSelection = {
       eventId: String(event.eventId ?? currentEventId.value ?? ''),
       place: {
@@ -900,6 +902,7 @@ function applyEventToHomeState(event: EventApiItem) {
       console.warn('Failed to persist restored selection:', e)
     }
   } else {
+    selectedPlaceInfo.value = null
     loadSelectedPlace()
   }
 }
@@ -938,6 +941,11 @@ async function loadPlaces() {
 
 const loadSelectedPlace = () => {
   try {
+    if (!canDisplaySelectedCove.value) {
+      selectedPlaceInfo.value = null
+      return
+    }
+
     const stored = localStorage.getItem('selected_place_v1')
     if (stored) {
       const parsed = JSON.parse(stored)
