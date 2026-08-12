@@ -120,7 +120,7 @@ export default defineComponent({
         const hash = window.location.hash
         const hashParams = new URLSearchParams(hash.split('?')[1] || '')
 
-        const captainIdParam = searchParams.get('captinaid') || hashParams.get('captinaid')
+        const captainIdParam = searchParams.get('captainid') || searchParams.get('captinaid') || hashParams.get('captainid') || hashParams.get('captinaid')
         if (captainIdParam) {
           isCaptainView.value = true
           tokenValid.value = true

@@ -1,6 +1,7 @@
 const PRIMARY_API_BASE = (import.meta?.env?.VITE_API_BASE as string) || 'https://localhost:7079'
 const EVENTS_CREATE_PATH = '/api/Events/create'
 const EVENTS_BY_ID_PATH = '/api/Events'
+const EVENTS_CURRENT_PATH = '/api/Events/getCurrent'
 const EVENTS_EDIT_PATH = '/api/Events/edit'
 const RESPONSES_EDIT_PATH = '/api/Responses/edit'
 
@@ -60,6 +61,16 @@ export const eventsApi = {
 
   async getById(id: number | string): Promise<EventApiItem> {
     return await getJson<EventApiItem>(`${PRIMARY_API_BASE}${EVENTS_BY_ID_PATH}/${encodeURIComponent(String(id))}`)
+  },
+
+  async getCurrent(): Promise<EventApiItem | null> {
+    const response = await fetch(`${PRIMARY_API_BASE}${EVENTS_CURRENT_PATH}`)
+    const event = await response.json().catch(() => null) as { eventId?: number; message?: string } | null
+    if (!response.ok && event?.message !== 'No events found') {
+      throw new Error(event?.message || `HTTP ${response.status}`)
+    }
+    if (!event?.eventId) return null
+    return event as EventApiItem
   },
 
   async edit(id: number | string, payload: { placeId: number; eventTime?: string }): Promise<void> {

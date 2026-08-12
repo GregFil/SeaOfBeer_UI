@@ -24,7 +24,7 @@
           <WinnerBanner :people="people" :places="places" :winner="effectiveWinner" :eventId="currentEventId" :read-only="isVotingReadOnly" :showNotification="showNotification" :onPlaceSelected="onPlaceSelected" />
         </div>
 
-        <div v-if="!votingActive && !winner" style="text-align:center; margin-bottom:24px">
+        <div v-if="eventDataLoaded && !votingActive && !winner" style="text-align:center; margin-bottom:24px">
           <h2 class="main-heading" style="font-family:'Pirata One', cursive; font-size:2.2em; margin:12px 0; color:#003B4F">
             'Tis time to chart a course and choose where we drop anchor to get properly pickled, ye scallywags!
           </h2>
@@ -106,11 +106,8 @@
       <main class="container home-container" style="padding-top: 18px;">
         <section class="panel" style="text-align:center; max-width:820px; margin:10px auto 12px; background: linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), url('/banner.png'); background-position:center; background-repeat:no-repeat; background-size:calc(100% - 4px) calc(100% - 4px);">
           <h2 class="main-heading" style="font-family:'Pirata One', cursive; font-size:2.1em; margin:8px 0 10px; color:#003B4F; letter-spacing:0.02em;">
-            Arrr... no meeting ID in these waters.
+            No meeting is currently scheduled.
           </h2>
-          <p style="margin:0 auto 14px; max-width:620px; color:#3f4a54; line-height:1.45; font-size:1.05em;">
-            Ye have nothing to do here, matey. Bring a proper meeting link to board the Quarterdeck.
-          </p>
         </section>
       </main>
     </template>
@@ -159,11 +156,13 @@ const isSending = ref(false)
 const menuOpen = ref(false)
 const currentPage = ref<PageType>('home')
 const currentEventId = ref<string>('')
+const currentEventIdFromHash = ref(false)
 const currentHashQuery = ref('')
 const responses = ref<Record<string, 'yes' | 'no' | 'not-sure'>>({})
 const winner = ref<string>('')
 const votingActive = ref(false)
 const groupEmailLink = ref<string>('')
+const eventDataLoaded = ref(false)
 const quorumReached = ref(false)
 const quorumTime = ref<number | null>(null)
 const countdownSeconds = ref(0)
@@ -182,8 +181,9 @@ const hideNotification = () => { notify.value.visible = false }
 function goToHash(hash: string) {
   const suffix = currentHashQuery.value
 
-  if (currentEventId.value && hash === '#/') {
-    window.location.hash = `#/${currentEventId.value}${suffix}`
+  if (hash === '#/') {
+    window.history.pushState({}, '', window.location.pathname)
+    checkHash()
     return
   }
 
@@ -195,7 +195,7 @@ function goToHash(hash: string) {
   window.location.hash = hash
 }
 
-const homeMenuHash = computed(() => currentEventId.value ? `#/${currentEventId.value}${currentHashQuery.value}` : '#/')
+const homeMenuHash = computed(() => window.location.pathname || '/')
 const crewMenuHash = computed(() => `#/crew${currentHashQuery.value}`)
 const covesMenuHash = computed(() => `#/coves${currentHashQuery.value}`)
 
@@ -218,16 +218,18 @@ const checkHash = () => {
     else if (hash.startsWith('#/coves')) currentPage.value = 'coves'
     else {
       const eventId = getEventIdFromHash(hash)
+      currentEventIdFromHash.value = Boolean(eventId)
       currentEventId.value = eventId || ''
-      currentPage.value = eventId ? 'home' : 'empty'
+      currentPage.value = 'home'
       menuOpen.value = false
 
       if (eventId) {
         // Event links like #/2 should open the voting view directly.
         votingActive.value = true
         groupEmailLink.value = ''
+      } else {
+        eventDataLoaded.value = false
       }
-      if (!eventId) currentEventId.value = ''
     }
   } catch (e) {
     currentPage.value = 'empty'
@@ -254,21 +256,22 @@ const canSelectWinner = computed(() => yesResponses.value >= 3)
 const allResponded = computed(() => totalResponses.value === people.value.length)
 const isVotingReadOnly = computed(() => currentPage.value === 'home' && !!currentEventId.value && isPastEvent.value)
 const captainIdFromQuery = computed(() => {
-  const query = (currentHashQuery.value || '').replace(/^\?/, '')
-  if (!query) return ''
-  const params = new URLSearchParams(query)
-  return String(params.get('captinaid') || '').trim()
+  const hashParams = new URLSearchParams((currentHashQuery.value || '').replace(/^\?/, ''))
+  const searchParams = new URLSearchParams(window.location.search)
+  return String(searchParams.get('captainid') || searchParams.get('captinaid') || hashParams.get('captainid') || hashParams.get('captinaid') || '').trim()
 })
 const hasCaptainAccessQuery = computed(() => {
-  const query = (currentHashQuery.value || '').replace(/^\?/, '')
-  if (!query) return false
-  const params = new URLSearchParams(query)
-  return Boolean(params.get('captinaid') || params.get('token'))
+  const hashParams = new URLSearchParams((currentHashQuery.value || '').replace(/^\?/, ''))
+  const searchParams = new URLSearchParams(window.location.search)
+  return Boolean(
+    searchParams.get('captainid') || searchParams.get('captinaid') || searchParams.get('token')
+    || hashParams.get('captainid') || hashParams.get('captinaid') || hashParams.get('token')
+  )
 })
 const effectiveWinner = computed(() => winner.value || captainIdFromQuery.value)
 const isCaptainLink = computed(() => !!currentEventId.value && hasCaptainAccessQuery.value)
 const canDisplaySelectedCove = computed(() => !!winner.value || isCaptainLink.value)
-const showWinnerBanner = computed(() => currentPage.value === 'home' && (!!winner.value || !!currentEventId.value))
+const showWinnerBanner = computed(() => currentPage.value === 'home' && (!!winner.value || !!captainIdFromQuery.value))
 
 // Quorum countdown format
 const countdownDisplay = computed(() => {
@@ -575,7 +578,7 @@ function selectRandomWinner() {
   if (countdownInterval) clearInterval(countdownInterval)
   
   // Log captain email with secure token link
-  const votingUrl = window.location.origin + window.location.pathname + '#/'
+  const votingUrl = window.location.origin + window.location.pathname
   const captainLink = votingUrl + `?token=${winnerToken}`
   const captainEmailBody = `Ahoy, Beer Captain ${winnerName}!\n\nYou've been selected as the Beer Captain! 🏴‍☠️\n\nUse this special link to select the meeting cove and time:\n${captainLink}\n\n(This link only works for you - it's secured with a unique token)\n\nHarrrr!`
   
@@ -775,7 +778,7 @@ async function manualSend() {
   isSending.value = true
   try {
     // Get voting page URL
-    const votingUrl = window.location.origin + window.location.pathname + '#/'
+    const votingUrl = window.location.origin + window.location.pathname
     groupEmailLink.value = votingUrl
     
     await eventsApi.create()
@@ -851,6 +854,21 @@ const loadEventDetails = async (eventId: string) => {
   applyEventToHomeState(event)
 }
 
+const loadCurrentEventDetails = async () => {
+  const event = await eventsApi.getCurrent()
+  if (!event) {
+    currentEventId.value = ''
+    currentPage.value = 'empty'
+    eventDataLoaded.value = true
+    votingActive.value = false
+    winner.value = ''
+    return
+  }
+
+  currentEventId.value = String(event.eventId)
+  applyEventToHomeState(event)
+}
+
 function applyEventToHomeState(event: EventApiItem) {
   const apiUsers = Array.isArray(event.users) ? event.users : []
   const captainUser = apiUsers.find((user) => user.isCaptain)
@@ -869,12 +887,13 @@ function applyEventToHomeState(event: EventApiItem) {
 
   people.value = mappedPeople
   responses.value = eventResponses
+  eventDataLoaded.value = true
   currentEventTime.value = normalizeToHHMM(event.eventTime)
   isPastEvent.value = isEventDateInPast(event.eventDate)
   winner.value = captainUser ? String(captainUser.userId) : ''
   saveResponses()
   votingActive.value = event.status ?? true
-  groupEmailLink.value = event.votingUrl || ''
+  groupEmailLink.value = window.location.origin + window.location.pathname
 
   const placePayload = event.place as Record<string, unknown> | null
   const placeIdValue = placePayload?.placeId ?? placePayload?.id
@@ -985,10 +1004,11 @@ function normalizeResponses() {
 }
 
 async function refreshHomePageData() {
-  if (currentPage.value !== 'home' || !currentEventId.value) return
+  if (currentPage.value !== 'home') return
 
   try {
-    await loadEventDetails(currentEventId.value)
+    if (currentEventIdFromHash.value && currentEventId.value) await loadEventDetails(currentEventId.value)
+    else await loadCurrentEventDetails()
   } catch (e) {
     console.error('Home page refresh failed:', e)
   }
@@ -1015,12 +1035,19 @@ onMounted(async () => {
   await loadPlaces()
 
   // Load data first
-  if (currentEventId.value) {
+  if (currentEventIdFromHash.value && currentEventId.value) {
     try {
       await loadEventDetails(currentEventId.value)
     } catch (e) {
       console.error('Failed to load event details:', e)
       showNotification('Failed to load event details', 'error')
+    }
+  } else if (currentPage.value === 'home') {
+    try {
+      await loadCurrentEventDetails()
+    } catch (e) {
+      console.error('Failed to load current event:', e)
+      showNotification('Failed to load current event', 'error')
     }
   }
 
@@ -1030,11 +1057,17 @@ onMounted(async () => {
     }
   }, 30000)
   loadResponses()
-  if (currentEventId.value) {
+  if (currentEventIdFromHash.value && currentEventId.value) {
     try {
       await loadEventDetails(currentEventId.value)
     } catch (e) {
       console.error('Failed to refresh event details after local load:', e)
+    }
+  } else if (currentPage.value === 'home') {
+    try {
+      await loadCurrentEventDetails()
+    } catch (e) {
+      console.error('Failed to refresh current event after local load:', e)
     }
   } else {
     normalizeResponses()
@@ -1043,7 +1076,7 @@ onMounted(async () => {
   loadCrewTimes()
   
   // Load winner from local storage only for non-event routes.
-  if (!currentEventId.value) {
+  if (!currentEventId.value && currentPage.value !== 'home') {
     try {
       const storedWinner = localStorage.getItem('winner_v1')
       if (storedWinner) winner.value = storedWinner
@@ -1148,6 +1181,16 @@ watch(currentPage, async (newPage) => {
       await loadPeople()
     }
   }
+
+  if (newPage === 'home' && !currentEventIdFromHash.value) {
+    eventDataLoaded.value = false
+    try {
+      await loadCurrentEventDetails()
+    } catch (e) {
+      console.error('Failed to load current event after navigation:', e)
+      showNotification('Failed to load current event', 'error')
+    }
+  }
 })
 
 watch(currentEventId, async (newEventId, oldEventId) => {
@@ -1159,18 +1202,21 @@ watch(currentEventId, async (newEventId, oldEventId) => {
   }
 
   if (newEventId) {
-    try {
-      await loadEventDetails(newEventId)
-    } catch (e) {
-      console.error('Failed to load event details on hash change:', e)
-      showNotification('Failed to load event details', 'error')
+    if (currentEventIdFromHash.value) {
+      try {
+        await loadEventDetails(newEventId)
+      } catch (e) {
+        console.error('Failed to load event details on hash change:', e)
+        showNotification('Failed to load event details', 'error')
+      }
     }
 
     eventRefreshInterval = setInterval(async () => {
       if (!currentEventId.value) return
 
       try {
-        await loadEventDetails(currentEventId.value)
+        if (currentEventIdFromHash.value) await loadEventDetails(currentEventId.value)
+        else await loadCurrentEventDetails()
       } catch (e) {
         console.error('Background event refresh failed:', e)
       }
